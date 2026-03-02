@@ -186,6 +186,27 @@ func (s *Server) handleSkipDeployTask(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, task)
 }
 
+// handleCancelTask cancels a running task via the workflow engine.
+func (s *Server) handleCancelTask(w http.ResponseWriter, r *http.Request) {
+	taskID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+
+	if err := s.Engine.Cancel(taskID); err != nil {
+		writeError(w, http.StatusConflict, err.Error())
+		return
+	}
+
+	task, err := s.Queries.GetTask(taskID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get task")
+		return
+	}
+	writeJSON(w, http.StatusOK, task)
+}
+
 // handleGetTaskLogs returns all logs for a given task.
 func (s *Server) handleGetTaskLogs(w http.ResponseWriter, r *http.Request) {
 	taskID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)

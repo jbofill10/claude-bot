@@ -100,13 +100,43 @@ func (e *Engine) SkipDeploy(taskID int64) {
 	e.broadcastStatus(taskID, "completed")
 }
 
+func (e *Engine) Cancel(taskID int64) error {
+	task, err := e.queries.GetTask(taskID)
+	if err != nil {
+		return fmt.Errorf("get task: %w", err)
+	}
+
+	// Only allow cancelling non-terminal tasks
+	switch task.Status {
+	case "completed", "failed", "cancelled":
+		return fmt.Errorf("task %d has status %s, cannot cancel", taskID, task.Status)
+	}
+
+	// Cancel the context (stops the goroutine in runStage)
+	e.mu.Lock()
+	cancelFn, hasCancel := e.cancels[taskID]
+	e.mu.Unlock()
+
+	if hasCancel {
+		cancelFn()
+	}
+
+	// Also kill the process directly for immediate effect
+	e.runner.Kill(taskID)
+
+	// Update DB status
+	_ = e.queries.UpdateTaskStatus(taskID, "cancelled")
+	e.broadcastStatus(taskID, "cancelled")
+	return nil
+}
+
 func (e *Engine) Retry(taskID int64) {
 	task, err := e.queries.GetTask(taskID)
 	if err != nil {
 		log.Printf("engine: failed to get task %d: %v", taskID, err)
 		return
 	}
-	if task.Status != "failed" {
+	if task.Status != "failed" && task.Status != "cancelled" {
 		log.Printf("engine: task %d has status %s, cannot retry", taskID, task.Status)
 		return
 	}
@@ -158,6 +188,11 @@ func (e *Engine) runStage(taskID int64, stage string) {
 		}
 
 		if err != nil {
+			// Check if task was cancelled (don't overwrite cancelled with failed)
+			if t, e2 := e.queries.GetTask(taskID); e2 == nil && t.Status == "cancelled" {
+				log.Printf("engine: task %d stage %s was cancelled", taskID, stage)
+				return
+			}
 			log.Printf("engine: task %d stage %s failed: %v", taskID, stage, err)
 			_ = e.queries.UpdateTaskError(taskID, err.Error())
 			e.broadcastStatus(taskID, "failed")

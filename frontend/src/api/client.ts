@@ -51,6 +51,8 @@ export const approveDeployTask = (id: number) =>
   request<Task>(`/tasks/${id}/approve-deploy`, { method: 'POST' });
 export const skipDeployTask = (id: number) =>
   request<Task>(`/tasks/${id}/skip-deploy`, { method: 'POST' });
+export const cancelTask = (id: number) =>
+  request<Task>(`/tasks/${id}/cancel`, { method: 'POST' });
 export const getTaskLogs = (id: number) => request<TaskLog[]>(`/tasks/${id}/logs`);
 
 // Repos - deploy script

@@ -63,6 +63,7 @@ func NewRouter(s *Server) http.Handler {
 		r.Post("/api/tasks/{id}/retry", s.handleRetryTask)
 		r.Post("/api/tasks/{id}/approve-deploy", s.handleApproveDeployTask)
 		r.Post("/api/tasks/{id}/skip-deploy", s.handleSkipDeployTask)
+		r.Post("/api/tasks/{id}/cancel", s.handleCancelTask)
 		r.Get("/api/tasks/{id}/logs", s.handleGetTaskLogs)
 
 		r.Put("/api/repos/{id}/deploy-script", s.handleUpdateRepoDeployScript)

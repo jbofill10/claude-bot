@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"claude-bot/internal/db"
 )
 
 func (e *Engine) runPlanning(ctx context.Context, taskID int64) error {

@@ -44,7 +44,8 @@ export type TaskStatus =
   | 'deploy_review'
   | 'deploying'
   | 'completed'
-  | 'failed';
+  | 'failed'
+  | 'cancelled';
 
 export interface TaskLog {
   id: number;

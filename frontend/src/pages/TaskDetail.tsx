@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Task, TaskStatus } from '../types';
-import { getTask, retryTask, approveTask, rejectTask, approveDeployTask, skipDeployTask } from '../api/client';
+import { getTask, retryTask, approveTask, rejectTask, approveDeployTask, skipDeployTask, cancelTask } from '../api/client';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 // ---------- Stage Progress Component ----------
@@ -29,18 +29,20 @@ const stageLabels: Record<string, string> = {
   deploying: 'Deploying',
   completed: 'Completed',
   failed: 'Failed',
+  cancelled: 'Cancelled',
 };
 
 function StageProgress({ status }: { status: TaskStatus }) {
   const currentIndex = STAGES.indexOf(status);
   const isFailed = status === 'failed';
+  const isCancelled = status === 'cancelled';
 
   return (
     <div style={{ marginBottom: '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
         {STAGES.map((stage, i) => {
           let bgColor = '#21262d';
-          if (isFailed) {
+          if (isFailed || isCancelled) {
             bgColor = i <= 0 ? '#f8514930' : '#21262d';
           } else if (i < currentIndex) {
             bgColor = '#238636';
@@ -76,6 +78,11 @@ function StageProgress({ status }: { status: TaskStatus }) {
       {isFailed && (
         <div style={{ color: '#f85149', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>
           Task Failed
+        </div>
+      )}
+      {isCancelled && (
+        <div style={{ color: '#f85149', fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>
+          Task Cancelled
         </div>
       )}
     </div>
@@ -346,6 +353,7 @@ const statusColors: Record<string, string> = {
   deploying: '#d29922',
   completed: '#3fb950',
   failed: '#f85149',
+  cancelled: '#f85149',
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -578,6 +586,21 @@ function TaskDetail() {
     }
   }
 
+  async function handleCancel() {
+    if (!window.confirm('Are you sure you want to cancel this task? The running process will be stopped.')) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const updated = await cancelTask(taskId);
+      setTask(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel task');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleString(undefined, {
       year: 'numeric',
@@ -671,6 +694,47 @@ function TaskDetail() {
           onSkip={handleSkipDeploy}
           loading={actionLoading}
         />
+      )}
+
+      {/* Cancel Button — shown during active/waiting stages */}
+      {(['pending', 'planning', 'plan_review', 'developing', 'reviewing', 'merging', 'deploy_review', 'deploying'] as TaskStatus[]).includes(task.status) && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <button
+            style={{
+              padding: '0.6rem 1.25rem',
+              borderRadius: '6px',
+              border: '1px solid #f85149',
+              backgroundColor: 'transparent',
+              color: '#f85149',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              cursor: actionLoading ? 'not-allowed' : 'pointer',
+              opacity: actionLoading ? 0.6 : 1,
+            }}
+            onClick={handleCancel}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Cancelling...' : 'Cancel Task'}
+          </button>
+        </div>
+      )}
+
+      {/* Cancelled Section */}
+      {task.status === 'cancelled' && (
+        <div style={styles.errorBox}>
+          <div style={styles.errorTitle}>Task Cancelled</div>
+          <button
+            style={{
+              ...styles.retryButton,
+              opacity: actionLoading ? 0.6 : 1,
+              cursor: actionLoading ? 'not-allowed' : 'pointer',
+            }}
+            onClick={handleRetry}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Retrying...' : 'Retry Task'}
+          </button>
+        </div>
       )}
 
       {/* Error Section */}
