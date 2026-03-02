@@ -115,7 +115,10 @@ func createTestTask(t *testing.T, q *db.Queries, status string) (*db.Task, *db.R
 
 func TestApproveDeploy(t *testing.T) {
 	q, engine := setupTestEngine(t)
-	task, _ := createTestTask(t, q, "deploy_review")
+	task, repo := createTestTask(t, q, "deploy_review")
+
+	// Set deploy script so runDeploying actually invokes the runner (which is nil → fails)
+	_ = q.UpdateRepoDeployScript(repo.ID, "./deploy.sh")
 
 	engine.ApproveDeploy(task.ID)
 

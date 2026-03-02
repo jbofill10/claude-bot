@@ -201,6 +201,10 @@ func (e *Engine) runStage(taskID int64, stage string) {
 }
 
 func (e *Engine) runClaude(ctx context.Context, taskID int64, stage, repoPath, prompt string) (string, error) {
+	if e.runner == nil {
+		return "", fmt.Errorf("claude runner is not configured")
+	}
+
 	onEvent := func(ev claude.Event) {
 		// Store log
 		_ = e.queries.CreateTaskLog(taskID, stage, ev.Content)
