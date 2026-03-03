@@ -1,0 +1,25 @@
+services:
+  claude-bot:
+    build: .
+    container_name: claude-bot
+    restart: unless-stopped
+    ports:
+      - "3111:3111"
+    environment:
+      - DB_PATH=/data/claude-bot.db
+      - ADDR=:3111
+      - CLAUDE_CONFIG_DIR=/home/botuser/.claude-work
+    volumes:
+      # SQLite database persistence
+      - claude-bot-data:/data
+      # Git repos (mapped to botuser home so ~/git discovery works)
+      - /home/jbofill/git:/home/botuser/git
+      # Claude CLI config (host uses CLAUDE_CONFIG_DIR=~/.claude-work)
+      - ~/.claude-work:/home/botuser/.claude-work
+      # GitHub CLI auth (read-only)
+      - ~/.config/gh:/home/botuser/.config/gh:ro
+      # Git config (read-only)
+      - ~/.gitconfig:/home/botuser/.gitconfig:ro
+
+volumes:
+  claude-bot-data:

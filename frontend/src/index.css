@@ -1,0 +1,46 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: #e1e4e8;
+  background-color: #0f1117;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  padding: 0.5em 1em;
+  font-size: 0.9em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #21262d;
+  color: #e1e4e8;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+button:hover {
+  background-color: #30363d;
+  border-color: #58a6ff;
+}
+
+input, textarea {
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  padding: 0.5em 0.75em;
+  font-size: 0.9em;
+  font-family: inherit;
+  background-color: #161b22;
+  color: #e1e4e8;
+  outline: none;
+}
+
+input:focus, textarea:focus {
+  border-color: #58a6ff;
+}
