@@ -56,11 +56,33 @@ func ParseEvent(line []byte) (*Event, error) {
 	case "error":
 		// For error events, try to surface whatever text is available.
 		ev.Content = string(msg.Message)
+	case "content_block_delta":
+		ev.Content = extractDeltaText(msg.Message)
 	default:
 		// Unknown type -- keep raw JSON but leave Content empty.
 	}
 
 	return ev, nil
+}
+
+// deltaPayload represents the "message" field for content_block_delta events.
+type deltaPayload struct {
+	Delta struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	} `json:"delta"`
+}
+
+// extractDeltaText pulls the incremental text from a content_block_delta event.
+func extractDeltaText(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var dp deltaPayload
+	if err := json.Unmarshal(raw, &dp); err != nil {
+		return ""
+	}
+	return dp.Delta.Text
 }
 
 // extractAssistantText pulls all text blocks out of an assistant message payload.

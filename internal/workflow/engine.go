@@ -206,8 +206,10 @@ func (e *Engine) runClaude(ctx context.Context, taskID int64, stage, repoPath, p
 	}
 
 	onEvent := func(ev claude.Event) {
-		// Store log
-		_ = e.queries.CreateTaskLog(taskID, stage, ev.Content)
+		// Store log asynchronously — don't block the broadcast.
+		go func() {
+			_ = e.queries.CreateTaskLog(taskID, stage, ev.Content)
+		}()
 
 		// Broadcast to WebSocket clients
 		msg, _ := json.Marshal(map[string]interface{}{

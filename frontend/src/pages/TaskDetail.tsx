@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Task, TaskStatus } from '../types';
 import { getTask, retryTask, approveTask, rejectTask, approveDeployTask, skipDeployTask, cancelTask } from '../api/client';
@@ -518,13 +518,16 @@ function TaskDetail() {
     return () => clearInterval(interval);
   }, [fetchTask]);
 
-  // Collect output lines from WebSocket messages
-  const outputLines: string[] = [];
-  for (const msg of messages) {
-    if (msg.type === 'output' && msg.content) {
-      outputLines.push(msg.content);
+  // Collect output lines from WebSocket messages (memoized to avoid recomputing on unrelated renders)
+  const outputLines = useMemo(() => {
+    const lines: string[] = [];
+    for (const msg of messages) {
+      if (msg.type === 'output' && msg.content) {
+        lines.push(msg.content);
+      }
     }
-  }
+    return lines;
+  }, [messages]);
 
   async function handleRetry() {
     setActionLoading(true);
